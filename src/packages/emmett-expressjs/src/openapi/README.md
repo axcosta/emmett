@@ -10,7 +10,7 @@ The `express-openapi-validator` package is an **optional peer dependency**. Inst
 npm install express-openapi-validator
 ```
 
-## Usage
+## Quick Start
 
 ### Basic Configuration
 
@@ -31,7 +31,7 @@ const app = getApplication({
 
 ### Using OpenAPI Spec Object
 
-You can also pass the OpenAPI specification as an object instead of a file path:
+You can pass the OpenAPI specification as an object instead of a file path:
 
 ```typescript
 const openApiSpec = {
@@ -59,9 +59,7 @@ const openApiSpec = {
           },
         },
         responses: {
-          '201': {
-            description: 'User created',
-          },
+          '201': { description: 'User created' },
         },
       },
     },
@@ -74,119 +72,307 @@ const app = getApplication({
 });
 ```
 
-### Configuration Options
+## Configuration Options
 
-The `createOpenApiValidatorOptions` helper provides sensible defaults, but you can customize the behavior:
+### Request Validation
+
+Control how incoming requests are validated:
 
 ```typescript
-const validatorOptions = createOpenApiValidatorOptions('./openapi.yaml', {
-  // Validate incoming requests (default: true)
-  validateRequests: true,
-
-  // Validate outgoing responses (default: false)
-  validateResponses: true,
-
-  // Validate security requirements (default: true)
-  validateSecurity: false,
-
-  // Enable format validation with ajv-formats (default: true)
-  validateFormats: true,
-
-  // Paths to ignore during validation
-  ignorePaths: /^\/health/,
-});
-
 const app = getApplication({
   apis: [myApi],
-  openApiValidator: validatorOptions,
-});
-```
-
-### Using Operation Handlers
-
-Express OpenAPI Validator supports automatic routing based on `operationId` in your OpenAPI spec. This is a powerful pattern that eliminates the need for manual route definitions:
-
-```typescript
-// Define your OpenAPI spec with operationIds
-const openApiSpec = {
-  openapi: '3.0.0',
-  info: {
-    title: 'Shopping Cart API',
-    version: '1.0.0',
-  },
-  paths: {
-    '/shopping-carts/{cartId}': {
-      get: {
-        operationId: 'getShoppingCart', // Maps to handlers/getShoppingCart.ts
-        parameters: [
-          {
-            name: 'cartId',
-            in: 'path',
-            required: true,
-            schema: { type: 'string' },
-          },
-        ],
-        responses: {
-          '200': { description: 'Shopping cart details' },
-        },
-      },
+  openApiValidator: createOpenApiValidatorOptions('./openapi.yaml', {
+    validateRequests: {
+      // Allow query parameters not defined in spec
+      allowUnknownQueryParameters: false,
+      // Coerce types (e.g., "123" -> 123)
+      coerceTypes: true,
+      // Remove properties not in spec
+      removeAdditional: false,
     },
-  },
-};
-
-// Configure with operation handlers path
-const app = getApplication({
-  apis: [], // No manual route definitions needed!
-  openApiValidator: createOpenApiValidatorOptions(openApiSpec, {
-    operationHandlers: './handlers', // Path to handlers directory
   }),
 });
 ```
 
-Your handler files should export the handler function matching the `operationId`:
+### Response Validation
+
+Validate outgoing responses (useful in development):
 
 ```typescript
-// handlers/getShoppingCart.ts
-import type { Request, Response } from 'express';
-
-export default async (req: Request, res: Response) => {
-  const { cartId } = req.params;
-  // Your business logic here
-  res.json({ id: cartId, items: [] });
-};
+const app = getApplication({
+  apis: [myApi],
+  openApiValidator: createOpenApiValidatorOptions('./openapi.yaml', {
+    validateResponses: {
+      // Remove additional properties from responses
+      removeAdditional: 'all',
+      // Coerce response types
+      coerceTypes: true,
+      // Custom error handler
+      onError: (error, body, req) => {
+        console.error('Response validation failed:', error);
+      },
+    },
+  }),
+});
 ```
 
-**Benefits of Operation Handlers:**
+### Security Validation
 
-- ✅ Routes are automatically derived from OpenAPI spec
-- ✅ Reduces boilerplate and eliminates manual route/handler mapping
-- ✅ Ensures API implementation stays in sync with specification
-- ✅ Type-safe when combined with OpenAPI code generation tools
-
-See the [operation handlers example](./exampleWithOperationHandlers.ts) for a complete working implementation.
-
-### Direct Configuration
-
-You can also pass the validator options directly without using the helper:
+Implement custom authentication and authorization:
 
 ```typescript
-import type { OpenApiValidatorOptions } from '@event-driven-io/emmett-expressjs';
+import type { SecurityHandlers } from '@event-driven-io/emmett-expressjs';
 
-const validatorOptions: OpenApiValidatorOptions = {
-  apiSpec: './openapi.yaml',
-  validateRequests: true,
-  validateResponses: false,
+const securityHandlers: SecurityHandlers = {
+  // Bearer token authentication
+  bearerAuth: async (req, scopes, schema) => {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) return false;
+    
+    try {
+      const user = await verifyToken(token);
+      req.user = user;
+      
+      // Check if user has required scopes
+      return scopes.every(scope => user.scopes.includes(scope));
+    } catch {
+      return false;
+    }
+  },
+  
+  // API Key authentication
+  apiKeyAuth: async (req, scopes, schema) => {
+    const apiKey = req.headers['x-api-key'];
+    if (!apiKey) return false;
+    
+    return await validateApiKey(apiKey as string);
+  },
 };
 
 const app = getApplication({
   apis: [myApi],
-  openApiValidator: validatorOptions,
+  openApiValidator: createOpenApiValidatorOptions('./openapi.yaml', {
+    validateSecurity: {
+      handlers: securityHandlers,
+    },
+  }),
+});
+```
+
+### Serving the OpenAPI Specification
+
+Serve your OpenAPI spec at a public endpoint:
+
+```typescript
+const app = getApplication({
+  apis: [myApi],
+  openApiValidator: createOpenApiValidatorOptions('./openapi.yaml', {
+    // Serve spec at /api-docs/openapi.json
+    serveSpec: '/api-docs/openapi.json',
+  }),
+});
+
+// Now accessible at: http://localhost:3000/api-docs/openapi.json
+```
+
+### Format Validation
+
+Control format validation behavior:
+
+```typescript
+const app = getApplication({
+  apis: [myApi],
+  openApiValidator: createOpenApiValidatorOptions('./openapi.yaml', {
+    // true = enable all formats
+    // false = disable format validation
+    // 'fast' = fast validation (recommended)
+    // 'full' = comprehensive validation
+    validateFormats: 'fast',
+  }),
+});
+```
+
+### File Uploads
+
+Configure file upload handling:
+
+```typescript
+const app = getApplication({
+  apis: [myApi],
+  openApiValidator: createOpenApiValidatorOptions('./openapi.yaml', {
+    fileUploader: {
+      dest: './uploads',
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB
+        files: 5, // Max 5 files
+      },
+    },
+  }),
+});
+```
+
+### Ignoring Paths
+
+Exclude certain paths from validation:
+
+```typescript
+const app = getApplication({
+  apis: [myApi],
+  openApiValidator: createOpenApiValidatorOptions('./openapi.yaml', {
+    // Using RegExp
+    ignorePaths: /^\/(health|metrics)/,
+    
+    // Or using a function
+    // ignorePaths: (path) => path.startsWith('/internal/'),
+  }),
+});
+```
+
+## Using Operation Handlers
+
+Express OpenAPI Validator supports automatic routing based on `operationId` in your OpenAPI spec. This eliminates manual route definitions:
+
+### OpenAPI Specification with operationIds
+
+```yaml
+# openapi.yaml
+openapi: 3.0.0
+info:
+  title: Shopping Cart API
+  version: 1.0.0
+paths:
+  /clients/{clientId}/shopping-carts:
+    post:
+      operationId: openShoppingCart
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Shopping cart created
+```
+
+### Application Configuration
+
+```typescript
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const app = getApplication({
+  apis: [], // No manual routes needed!
+  openApiValidator: createOpenApiValidatorOptions('./openapi.yaml', {
+    operationHandlers: path.join(__dirname, './handlers'),
+  }),
+});
+```
+
+### Handler Implementation
+
+Create a handler file matching the directory structure and operationId:
+
+```typescript
+// handlers/openShoppingCart.ts
+import { on } from '@event-driven-io/emmett-expressjs';
+import type { Request } from 'express';
+
+export const openShoppingCart = on(async (request: Request) => {
+  const clientId = request.params.clientId;
+  
+  // Your business logic here
+  const result = await createShoppingCart(clientId);
+  
+  return Created({
+    createdId: result.id,
+    eTag: toWeakETag(result.version),
+  });
+});
+```
+
+See [example.ts](./example.ts) and [exampleWithOperationHandlers.ts](./exampleWithOperationHandlers.ts) for complete working examples.
+
+**Benefits of Operation Handlers:**
+
+- ✅ Routes automatically derived from OpenAPI spec
+- ✅ Reduces boilerplate code
+- ✅ Ensures implementation matches specification
+- ✅ Type-safe with proper TypeScript setup
+
+## Advanced Configuration
+
+### Complete Options Example
+
+```typescript
+import {
+  getApplication,
+  createOpenApiValidatorOptions,
+  type SecurityHandlers,
+} from '@event-driven-io/emmett-expressjs';
+
+const securityHandlers: SecurityHandlers = {
+  bearerAuth: async (req, scopes) => {
+    // Custom auth logic
+    return true;
+  },
+};
+
+const app = getApplication({
+  apis: [myApi],
+  openApiValidator: createOpenApiValidatorOptions('./openapi.yaml', {
+    // Request validation
+    validateRequests: {
+      allowUnknownQueryParameters: false,
+      coerceTypes: true,
+      removeAdditional: false,
+    },
+    
+    // Response validation
+    validateResponses: {
+      removeAdditional: 'all',
+      coerceTypes: true,
+    },
+    
+    // Security
+    validateSecurity: {
+      handlers: securityHandlers,
+    },
+    
+    // Format validation
+    validateFormats: 'fast',
+    
+    // Serve spec
+    serveSpec: '/api-docs/openapi.json',
+    
+    // File uploads
+    fileUploader: {
+      dest: './uploads',
+      limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB
+      },
+    },
+    
+    // Ignore paths
+    ignorePaths: /^\/(health|metrics)/,
+    
+    // Validate the spec itself
+    validateApiSpec: true,
+    
+    // $ref resolution
+    $refParser: {
+      mode: 'dereference',
+    },
+  }),
 });
 ```
 
 ## Error Handling
 
-Validation errors are automatically handled by the built-in problem details middleware. Invalid requests will receive a `400 Bad Request` response with detailed error information:
+Validation errors are automatically handled by the built-in problem details middleware. Invalid requests receive a `400 Bad Request` response:
 
 ```json
 {
@@ -203,20 +389,13 @@ Validation errors are automatically handled by the built-in problem details midd
 }
 ```
 
-## Benefits
+## Best Practices
 
-- **Contract-First Development**: Ensure your API implementation matches your OpenAPI specification
-- **Request Validation**: Automatically validate request parameters, query strings, headers, and body
-- **Response Validation**: Verify that your API returns responses matching the specification (useful in development)
-- **Security Validation**: Enforce security requirements defined in your OpenAPI spec
-- **Better Error Messages**: Get detailed validation errors with precise information about what failed
-
-## Important Notes
-
-1. **Optional Dependency**: The validator is completely optional. Your application will work without it if not configured.
-2. **Performance**: Request validation adds minimal overhead. Response validation should typically be disabled in production.
-3. **Compatibility**: Requires OpenAPI 3.x specifications. OpenAPI 2.0 (Swagger) is not supported.
-4. **Middleware Order**: The validator is applied before your API routes, ensuring requests are validated before reaching your handlers.
+1. **Development vs Production**: Enable response validation in development, disable in production for performance
+2. **Security Handlers**: Always implement proper authentication/authorization in security handlers
+3. **File Uploads**: Set appropriate limits to prevent abuse
+4. **Spec Serving**: Only serve specs publicly if intended for API consumers
+5. **Operation Handlers**: Use operation handlers for cleaner, more maintainable code
 
 ## Complete Example
 
@@ -225,25 +404,61 @@ import {
   getApplication,
   createOpenApiValidatorOptions,
   startAPI,
+  type SecurityHandlers,
 } from '@event-driven-io/emmett-expressjs';
-import { getPostgreSQLEventStore } from '@event-driven-io/emmett-postgresql';
+import { getInMemoryEventStore } from '@event-driven-io/emmett';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const eventStore = getPostgreSQLEventStore(process.env.DATABASE_URL);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const eventStore = getInMemoryEventStore();
+
+const securityHandlers: SecurityHandlers = {
+  bearerAuth: async (req, scopes) => {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    return !!token; // Implement proper validation
+  },
+};
 
 const app = getApplication({
-  apis: [usersApi(eventStore), productsApi(eventStore)],
-  openApiValidator: createOpenApiValidatorOptions('./openapi.yaml', {
-    validateRequests: true,
-    validateResponses: process.env.NODE_ENV === 'development',
-    ignorePaths: /^\/(health|metrics)/,
-  }),
+  apis: [], // Using operation handlers
+  openApiValidator: createOpenApiValidatorOptions(
+    path.join(__dirname, './openapi.yaml'),
+    {
+      // Validation
+      validateRequests: true,
+      validateResponses: process.env.NODE_ENV === 'development',
+      
+      // Security
+      validateSecurity: {
+        handlers: securityHandlers,
+      },
+      
+      // Operation handlers
+      operationHandlers: path.join(__dirname, './handlers'),
+      
+      // Serve spec
+      serveSpec: '/api-docs/openapi.json',
+      
+      // Ignore health checks
+      ignorePaths: /^\/health$/,
+    },
+  ),
 });
 
-const server = startAPI(app, { port: 3000 });
+startAPI(app, { port: 3000 });
 ```
 
 ## See Also
 
-- [express-openapi-validator documentation](https://github.com/cdimascio/express-openapi-validator)
+- [express-openapi-validator documentation](https://cdimascio.github.io/express-openapi-validator-documentation/)
 - [OpenAPI 3.x Specification](https://spec.openapis.org/oas/v3.1.0)
-- [Emmett Getting Started Guide](https://event-driven-io.github.io/emmett/getting-started)
+- [Emmett Documentation](https://event-driven-io.github.io/emmett/)
+
+## Examples
+
+- [example.ts](./example.ts) - Basic OpenAPI validation with manual routes
+- [exampleWithOperationHandlers.ts](./exampleWithOperationHandlers.ts) - Using operation handlers for automatic routing
+- [openapi.int.spec.ts](./openapi.int.spec.ts) - Integration tests demonstrating various features

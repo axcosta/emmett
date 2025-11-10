@@ -89,6 +89,22 @@ export const getApplication = (options: ApplicationOptions) => {
         );
       }
 
+      // Serve OpenAPI spec if configured
+      if (openApiValidator.serveSpec) {
+        if (typeof openApiValidator.apiSpec === 'string') {
+          // If apiSpec is a file path, serve it as a static file
+          app.use(
+            openApiValidator.serveSpec,
+            express.static(openApiValidator.apiSpec),
+          );
+        } else {
+          // If apiSpec is an object, serve it as JSON
+          app.get(openApiValidator.serveSpec, (_req, res) => {
+            res.json(openApiValidator.apiSpec);
+          });
+        }
+      }
+
       const factory = provider.middleware as (
         opts: OpenApiValidatorOptions,
       ) => RequestHandler | RequestHandler[];
