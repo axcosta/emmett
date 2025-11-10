@@ -1,7 +1,13 @@
-import express, { Router, type Application } from 'express';
+import express, {
+  Router,
+  type Application,
+  type RequestHandler,
+} from 'express';
 import 'express-async-errors';
 import http from 'http';
+import { createRequire } from 'node:module';
 import { problemDetailsMiddleware } from './middlewares/problemDetailsMiddleware';
+import type { OpenApiValidatorOptions } from './openapi';
 import type { ErrorToProblemDetailsMapping } from './responses';
 
 // #region web-api-setup
@@ -15,6 +21,25 @@ export type ApplicationOptions = {
   disableJsonMiddleware?: boolean;
   disableUrlEncodingMiddleware?: boolean;
   disableProblemDetailsMiddleware?: boolean;
+  /**
+   * Optional OpenAPI validator configuration.
+   * When provided, enables request/response validation against an OpenAPI specification.
+   * Requires the 'express-openapi-validator' package to be installed.
+   *
+   * @see https://github.com/cdimascio/express-openapi-validator
+   * @example
+   * ```typescript
+   * import { getApplication, createOpenApiValidatorOptions } from '@event-driven-io/emmett-expressjs';
+   *
+   * const app = getApplication({
+   *   apis: [myApi],
+   *   openApiValidator: createOpenApiValidatorOptions('./openapi.yaml', {
+   *     validateResponses: true
+   *   })
+   * });
+   * ```
+   */
+  openApiValidator?: OpenApiValidatorOptions;
 };
 
 export const getApplication = (options: ApplicationOptions) => {
@@ -27,6 +52,7 @@ export const getApplication = (options: ApplicationOptions) => {
     disableJsonMiddleware,
     disableUrlEncodingMiddleware,
     disableProblemDetailsMiddleware,
+    openApiValidator,
   } = options;
 
   const router = Router();
@@ -45,6 +71,43 @@ export const getApplication = (options: ApplicationOptions) => {
         extended: true,
       }),
     );
+
+  // add OpenAPI validator middleware if configured
+  if (openApiValidator) {
+    try {
+      const require = createRequire(import.meta.url);
+      // express-openapi-validator exports a default with .middleware (ESM/CJS compatibility)
+      const mod = require('express-openapi-validator') as Record<
+        string,
+        unknown
+      >;
+      const provider = (mod.default ?? mod) as Record<string, unknown>;
+
+      if (typeof provider.middleware !== 'function') {
+        throw new Error(
+          'Invalid express-openapi-validator module: missing middleware export',
+        );
+      }
+
+      const factory = provider.middleware as (
+        opts: OpenApiValidatorOptions,
+      ) => RequestHandler | RequestHandler[];
+      const middleware = factory(openApiValidator);
+      if (Array.isArray(middleware)) {
+        for (const m of middleware) app.use(m);
+      } else {
+        app.use(middleware);
+      }
+    } catch {
+      console.warn(
+        'OpenAPI validator configuration provided but express-openapi-validator package is not installed. ' +
+          'Install it with: npm install express-openapi-validator',
+      );
+      throw new Error(
+        'express-openapi-validator package is required when openApiValidator option is used',
+      );
+    }
+  }
 
   for (const api of apis) {
     api(router);

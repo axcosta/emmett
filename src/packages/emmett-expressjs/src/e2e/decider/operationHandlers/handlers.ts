@@ -1,0 +1,155 @@
+import {
+  DeciderCommandHandler,
+  getInMemoryEventStore,
+  STREAM_DOES_NOT_EXIST,
+  assertNotEmptyString,
+  assertPositiveNumber,
+  assertUnsignedBigInt,
+} from '@event-driven-io/emmett';
+import type { Request } from 'express';
+import { Created, NoContent, on } from '../../..';
+import { getETagValueFromIfMatch, toWeakETag } from '../../../etag';
+import { decider } from '../businessLogic';
+import type { PricedProductItem, ProductItem } from '../shoppingCart';
+
+// Add Product Item Request Type
+type AddProductItemRequest = Request<
+  Partial<{ shoppingCartId: string }>,
+  unknown,
+  Partial<{ productId: string; quantity: number }>
+>;
+
+// Simple in-memory event store for E2E tests
+const eventStore = getInMemoryEventStore();
+const handle = DeciderCommandHandler(decider);
+
+const dummyPriceProvider = (_productId: string) => {
+  return 100;
+};
+
+// POST /clients/{clientId}/shopping-carts
+export const openShoppingCart = on(async (request: Request) => {
+  const clientId = assertNotEmptyString(request.params.clientId);
+  const shoppingCartId = clientId;
+
+  const result = await handle(
+    eventStore,
+    shoppingCartId,
+    {
+      type: 'OpenShoppingCart',
+      data: { clientId, shoppingCartId, now: new Date() },
+    },
+    { expectedStreamVersion: STREAM_DOES_NOT_EXIST },
+  );
+
+  return Created({
+    createdId: shoppingCartId,
+    eTag: toWeakETag(result.nextExpectedStreamVersion),
+  });
+});
+
+// POST /clients/{clientId}/shopping-carts/{shoppingCartId}/product-items
+export const addProductItemToShoppingCart = on(
+  async (request: AddProductItemRequest) => {
+    const shoppingCartId = assertNotEmptyString(request.params.shoppingCartId);
+    const productItem: ProductItem = {
+      productId: assertNotEmptyString(request.body.productId),
+      quantity: assertPositiveNumber(request.body.quantity),
+    };
+    const unitPrice = dummyPriceProvider(productItem.productId);
+
+    const result = await handle(
+      eventStore,
+      shoppingCartId,
+      {
+        type: 'AddProductItemToShoppingCart',
+        data: { shoppingCartId, productItem: { ...productItem, unitPrice } },
+      },
+      {
+        expectedStreamVersion: assertUnsignedBigInt(
+          getETagValueFromIfMatch(request),
+        ),
+      },
+    );
+
+    return NoContent({
+      eTag: toWeakETag(result.nextExpectedStreamVersion),
+    });
+  },
+);
+
+// DELETE /clients/{clientId}/shopping-carts/{shoppingCartId}/product-items
+export const removeProductItemFromShoppingCart = on(
+  async (request: Request) => {
+    const shoppingCartId = assertNotEmptyString(request.params.shoppingCartId);
+    const productItem: PricedProductItem = {
+      productId: assertNotEmptyString(request.query.productId),
+      quantity: assertPositiveNumber(Number(request.query.quantity)),
+      unitPrice: assertPositiveNumber(Number(request.query.unitPrice)),
+    };
+
+    const result = await handle(
+      eventStore,
+      shoppingCartId,
+      {
+        type: 'RemoveProductItemFromShoppingCart',
+        data: { shoppingCartId, productItem },
+      },
+      {
+        expectedStreamVersion: assertUnsignedBigInt(
+          getETagValueFromIfMatch(request),
+        ),
+      },
+    );
+
+    return NoContent({
+      eTag: toWeakETag(result.nextExpectedStreamVersion),
+    });
+  },
+);
+
+// POST /clients/{clientId}/shopping-carts/{shoppingCartId}/confirm
+export const confirmShoppingCart = on(async (request: Request) => {
+  const shoppingCartId = assertNotEmptyString(request.params.shoppingCartId);
+
+  const result = await handle(
+    eventStore,
+    shoppingCartId,
+    {
+      type: 'ConfirmShoppingCart',
+      data: { shoppingCartId, now: new Date() },
+    },
+    {
+      expectedStreamVersion: assertUnsignedBigInt(
+        getETagValueFromIfMatch(request),
+      ),
+    },
+  );
+
+  return NoContent({
+    eTag: toWeakETag(result.nextExpectedStreamVersion),
+  });
+});
+
+// DELETE /clients/{clientId}/shopping-carts/{shoppingCartId}
+export const cancelShoppingCart = on(async (request: Request) => {
+  const shoppingCartId = assertNotEmptyString(request.params.shoppingCartId);
+
+  const result = await handle(
+    eventStore,
+    shoppingCartId,
+    {
+      type: 'CancelShoppingCart',
+      data: { shoppingCartId, now: new Date() },
+    },
+    {
+      expectedStreamVersion: assertUnsignedBigInt(
+        getETagValueFromIfMatch(request),
+      ),
+    },
+  );
+
+  return NoContent({
+    eTag: toWeakETag(result.nextExpectedStreamVersion),
+  });
+});

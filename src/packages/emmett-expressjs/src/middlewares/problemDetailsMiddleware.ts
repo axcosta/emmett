@@ -1,4 +1,3 @@
-import { isNumber } from '@event-driven-io/emmett';
 import type { NextFunction, Request, Response } from 'express';
 import { ProblemDocument } from 'http-problem-details';
 import { sendProblem, type ErrorToProblemDetailsMapping } from '..';
@@ -26,13 +25,24 @@ export const defaultErrorToProblemDetailsMapping = (
 ): ProblemDocument => {
   let statusCode = 500;
 
+  // Prefer standard `status` code if present (e.g., express-openapi-validator)
+  const errObj = error as unknown as Record<string, unknown>;
+  const maybeStatus = errObj['status'];
   if (
-    'errorCode' in error &&
-    isNumber(error.errorCode) &&
-    error.errorCode >= 100 &&
-    error.errorCode < 600
+    typeof maybeStatus === 'number' &&
+    maybeStatus >= 100 &&
+    maybeStatus < 600
   ) {
-    statusCode = error.errorCode;
+    statusCode = maybeStatus;
+  }
+
+  const maybeErrorCode = errObj['errorCode'];
+  if (
+    typeof maybeErrorCode === 'number' &&
+    maybeErrorCode >= 100 &&
+    maybeErrorCode < 600
+  ) {
+    statusCode = maybeErrorCode;
   }
 
   return new ProblemDocument({

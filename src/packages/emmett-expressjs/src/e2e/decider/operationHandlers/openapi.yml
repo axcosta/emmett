@@ -1,0 +1,174 @@
+openapi: 3.0.0
+info:
+  title: Shopping Cart API
+  version: 1.0.0
+  description: E2E test API for shopping cart with operationHandlers
+
+paths:
+  /clients/{clientId}/shopping-carts:
+    post:
+      operationId: openShoppingCart
+      x-eov-operation-handler: handlers
+      summary: Open a new shopping cart
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: Shopping cart created
+          headers:
+            ETag:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  createdId:
+                    type: string
+                required:
+                  - createdId
+        '412':
+          description: Precondition failed
+        '500':
+          description: Server error
+
+  /clients/{clientId}/shopping-carts/{shoppingCartId}/product-items:
+    post:
+      operationId: addProductItemToShoppingCart
+      x-eov-operation-handler: handlers
+      summary: Add a product item to shopping cart
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: shoppingCartId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: If-Match
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                productId:
+                  type: string
+                quantity:
+                  type: integer
+                  minimum: 1
+              required:
+                - productId
+                - quantity
+      responses:
+        '204':
+          description: Product item added successfully
+          headers:
+            ETag:
+              schema:
+                type: string
+        '400':
+          description: Bad request - validation failed
+        '412':
+          description: Precondition failed
+        '500':
+          description: Server error
+
+    delete:
+      operationId: removeProductItemFromShoppingCart
+      x-eov-operation-handler: handlers
+      summary: Remove a product item from shopping cart
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: shoppingCartId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: If-Match
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: productId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: quantity
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - name: unitPrice
+          in: query
+          required: true
+          schema:
+            type: number
+            minimum: 0
+      responses:
+        '204':
+          description: Product item removed successfully
+          headers:
+            ETag:
+              schema:
+                type: string
+        '400':
+          description: Bad request
+        '412':
+          description: Precondition failed
+
+  /clients/{clientId}/shopping-carts/{shoppingCartId}/confirm:
+    post:
+      operationId: confirmShoppingCart
+      x-eov-operation-handler: handlers
+      summary: Confirm shopping cart
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: shoppingCartId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: If-Match
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Shopping cart confirmed successfully
+          headers:
+            ETag:
+              schema:
+                type: string
+        '412':
+          description: Precondition failed
+        '500':
+          description: Server error
