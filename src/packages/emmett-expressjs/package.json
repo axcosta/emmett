@@ -8,13 +8,13 @@
     "build:ts": "tsc",
     "build:ts:watch": "tsc -b --watch",
     "test": "run-s test:unit test:int test:e2e",
-    "test:unit": "glob -c \"node --import tsx --test\" **/*.unit.spec.ts",
-    "test:int": "glob -c \"node --import tsx --test\" **/*.int.spec.ts",
-    "test:e2e": "glob -c \"node --import tsx --test\" **/*.e2e.spec.ts",
-    "test:watch": "node --import tsx --test --watch",
-    "test:unit:watch": "glob -c \"node --import tsx --test --watch\" **/*.unit.spec.ts",
-    "test:int:watch": "glob -c \"node --import tsx --test --watch\" **/*.int.spec.ts",
-    "test:e2e:watch": "glob -c \"node --import tsx --test --watch\" **/*.e2e.spec.ts"
+    "test:unit": "glob -c \"node --import tsx --import tsx/cjs --test\" **/*.unit.spec.ts",
+    "test:int": "glob -c \"node --import tsx --import tsx/cjs --test\" **/*.int.spec.ts",
+    "test:e2e": "glob -c \"node --import tsx --import tsx/cjs --test\" **/*.e2e.spec.ts",
+    "test:watch": "node --import tsx --import tsx/cjs --test --watch",
+    "test:unit:watch": "glob -c \"node --import tsx --import tsx/cjs --test --watch\" **/*.unit.spec.ts",
+    "test:int:watch": "glob -c \"node --import tsx --import tsx/cjs --test --watch\" **/*.int.spec.ts",
+    "test:e2e:watch": "glob -c \"node --import tsx --import tsx/cjs --test --watch\" **/*.e2e.spec.ts"
   },
   "repository": {
     "type": "git",
