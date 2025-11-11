@@ -117,9 +117,9 @@ export const eventStoreDBEventStoreConsumer = <
       };
 
     const result = await Promise.allSettled(
-      activeProcessors.map((s) => {
+      activeProcessors.map(async (s) => {
         // TODO: Add here filtering to only pass messages that can be handled by
-        return s.handle(messagesBatch, { client });
+        return await s.handle(messagesBatch, { client });
       }),
     );
 
@@ -217,8 +217,6 @@ export const eventStoreDBEventStoreConsumer = <
       return start;
     },
     stop,
-    close: async () => {
-      await stop();
-    },
+    close: stop,
   };
 };
