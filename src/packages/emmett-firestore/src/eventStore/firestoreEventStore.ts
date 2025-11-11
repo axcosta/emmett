@@ -1,4 +1,4 @@
-import type { Firestore } from '@google-cloud/firestore';
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 import {
   NO_CONCURRENCY_CHECK,
   type AggregateStreamOptions,
@@ -11,6 +11,7 @@ import {
   type ReadStreamOptions,
   type ReadStreamResult,
 } from '@event-driven-io/emmett';
+import type { Firestore } from '@google-cloud/firestore';
 import { aggregateStream } from './storage/aggregateStream';
 import { appendToStream } from './storage/appendToStream';
 import { readStream } from './storage/readStream';

@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-import type { Firestore } from '@google-cloud/firestore';
 import {
   STREAM_DOES_NOT_EXIST,
   type Event,
@@ -9,16 +6,27 @@ import {
   type ReadStreamOptions,
   type ReadStreamResult,
 } from '@event-driven-io/emmett';
+import type { Firestore } from '@google-cloud/firestore';
 
 export const readStream = async <EventType extends Event>(
   firestore: Firestore,
   streamName: string,
-  options: ReadStreamOptions = {},
-  streamsCollectionName: string,
+  options?: ReadStreamOptions<bigint>,
+  streamsCollectionName: string = 'streams',
 ): Promise<
   ReadStreamResult<EventType, ReadEventMetadataWithGlobalPosition>
 > => {
-  const { from, to, maxCount } = options;
+  // Extract options safely
+  const from =
+    options && 'from' in options
+      ? (options as { from: bigint }).from
+      : undefined;
+  const to =
+    options && 'to' in options ? (options as { to: bigint }).to : undefined;
+  const maxCount =
+    options && 'maxCount' in options
+      ? (options as { maxCount?: bigint }).maxCount
+      : undefined;
 
   // Reference to stream document
   const streamRef = firestore.collection(streamsCollectionName).doc(streamName);
@@ -28,8 +36,9 @@ export const readStream = async <EventType extends Event>(
 
   if (!streamDoc.exists) {
     return {
-      currentStreamVersion: STREAM_DOES_NOT_EXIST,
+      currentStreamVersion: STREAM_DOES_NOT_EXIST as unknown as bigint,
       events: [],
+      streamExists: false,
     };
   }
 
@@ -49,7 +58,7 @@ export const readStream = async <EventType extends Event>(
 
   // Apply limit
   if (maxCount !== undefined) {
-    query = query.limit(maxCount);
+    query = query.limit(Number(maxCount));
   }
 
   // Execute query
@@ -57,34 +66,46 @@ export const readStream = async <EventType extends Event>(
 
   if (snapshot.empty) {
     // Stream exists but no events match the query
-    const currentVersion = BigInt(streamDoc.data()!.version as number);
+    const streamData = streamDoc.data();
+    const currentVersion = BigInt((streamData?.version as number) ?? 0);
     return {
       currentStreamVersion: currentVersion,
       events: [],
+      streamExists: true,
     };
   }
 
   // Map documents to events
   const events: ReadEvent<EventType, ReadEventMetadataWithGlobalPosition>[] =
-    snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        type: data.type,
-        data: data.data,
-        metadata: {
-          ...data.metadata,
-          streamName: streamName,
-          streamPosition: BigInt(data.streamVersion),
-          globalPosition: BigInt(data.globalPosition),
-        },
-      } as ReadEvent<EventType, ReadEventMetadataWithGlobalPosition>;
-    });
+    snapshot.docs.map(
+      (doc): ReadEvent<EventType, ReadEventMetadataWithGlobalPosition> => {
+        const data = doc.data() as {
+          type: string;
+          data: unknown;
+          metadata: Record<string, unknown>;
+          streamVersion: number;
+          globalPosition: number;
+        };
+        return {
+          type: data.type,
+          data: data.data,
+          metadata: {
+            ...data.metadata,
+            streamName,
+            streamPosition: BigInt(data.streamVersion),
+            globalPosition: BigInt(data.globalPosition),
+          },
+        } as ReadEvent<EventType, ReadEventMetadataWithGlobalPosition>;
+      },
+    );
 
   // Get current stream version from metadata
-  const currentStreamVersion = BigInt(streamDoc.data()!.version as number);
+  const streamData = streamDoc.data();
+  const currentStreamVersion = BigInt((streamData?.version as number) ?? 0);
 
   return {
     currentStreamVersion,
     events,
+    streamExists: true,
   };
 };

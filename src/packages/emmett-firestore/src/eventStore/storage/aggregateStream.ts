@@ -1,23 +1,28 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import type { Firestore } from '@google-cloud/firestore';
+/* 
+eslint-disable @typescript-eslint/no-explicit-any, 
+@typescript-eslint/no-unsafe-assignment, 
+@typescript-eslint/no-unsafe-call, 
+@typescript-eslint/no-unsafe-member-access
+ */
 import {
-  NO_CONCURRENCY_CHECK,
   STREAM_DOES_NOT_EXIST,
   type AggregateStreamOptions,
   type AggregateStreamResult,
   type Event,
 } from '@event-driven-io/emmett';
+import type { Firestore } from '@google-cloud/firestore';
 import { readStream } from './readStream';
 
-export const aggregateStream = async <State, EventType extends Event>(
+const aggregateStreamImpl = async <State, EventType extends Event>(
   firestore: Firestore,
   streamName: string,
-  options: AggregateStreamOptions<State, EventType>,
+  options: AggregateStreamOptions<State, EventType, any>,
   streamsCollectionName: string,
 ): Promise<AggregateStreamResult<State>> => {
-  const { evolve, initialState, read } = options;
+  const evolve = (options as any).evolve;
+  const initialState = (options as any).initialState;
+  const read = (options as any).read;
 
-  // Read events from stream
   const result = await readStream<EventType>(
     firestore,
     streamName,
@@ -25,22 +30,27 @@ export const aggregateStream = async <State, EventType extends Event>(
     streamsCollectionName,
   );
 
-  // If stream doesn't exist, return initial state
-  if (result.currentStreamVersion === STREAM_DOES_NOT_EXIST) {
+  const streamDoesNotExist = STREAM_DOES_NOT_EXIST as unknown as bigint;
+  const currentVersion = result.currentStreamVersion;
+
+  if (currentVersion === streamDoesNotExist) {
     return {
       state: initialState(),
-      currentStreamVersion: STREAM_DOES_NOT_EXIST,
+      currentStreamVersion: streamDoesNotExist,
+      streamExists: false,
     };
   }
 
-  // Aggregate events into state
-  const state = result.events.reduce(
-    (current, event) => evolve(current, event),
-    initialState(),
-  );
+  let state = initialState();
+  for (const event of result.events) {
+    state = evolve(state, event);
+  }
 
   return {
     state,
     currentStreamVersion: result.currentStreamVersion,
+    streamExists: true,
   };
 };
+
+export const aggregateStream = aggregateStreamImpl;

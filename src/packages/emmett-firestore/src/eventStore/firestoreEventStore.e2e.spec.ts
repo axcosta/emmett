@@ -1,8 +1,4 @@
-/* eslint-disable @typescript-eslint/restrict-template-expressions */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-redundant-type-constituents, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import {
   STREAM_DOES_NOT_EXIST,
   STREAM_EXISTS,
@@ -32,7 +28,6 @@ type ShoppingCartEvent =
   | ShoppingCartOpened
   | ProductAdded
   | ShoppingCartConfirmed;
-
 // Test state
 type ShoppingCart = {
   customerId: string;
@@ -174,13 +169,16 @@ void describe('Firestore Event Store E2E', () => {
         ],
         { expectedStreamVersion: STREAM_DOES_NOT_EXIST },
       );
-    } catch (error) {
+    } catch (error: unknown) {
       errorThrown = true;
       if (
         !(error instanceof Error) ||
         !error.message.includes('Expected version')
       ) {
-        throw new Error(`Expected ExpectedVersionConflictError, got ${error}`);
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        throw new Error(
+          `Expected ExpectedVersionConflictError, got ${errorMsg}`,
+        );
       }
     }
 
@@ -208,13 +206,16 @@ void describe('Firestore Event Store E2E', () => {
         ],
         { expectedStreamVersion: STREAM_EXISTS },
       );
-    } catch (error) {
+    } catch (error: unknown) {
       errorThrown = true;
       if (
         !(error instanceof Error) ||
         !error.message.includes('Expected version')
       ) {
-        throw new Error(`Expected ExpectedVersionConflictError, got ${error}`);
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        throw new Error(
+          `Expected ExpectedVersionConflictError, got ${errorMsg}`,
+        );
       }
     }
 
@@ -272,7 +273,7 @@ void describe('Firestore Event Store E2E', () => {
         ],
         { expectedStreamVersion: 0n }, // Wrong version
       );
-    } catch (error) {
+    } catch {
       errorThrown = true;
     }
 
@@ -316,33 +317,45 @@ void describe('Firestore Event Store E2E', () => {
       ShoppingCart,
       ShoppingCartEvent
     >(streamName, {
-      initialState: () => ({
+      initialState: (): ShoppingCart => ({
         customerId: '',
         items: [],
-        status: 'open' as const,
+        status: 'open',
       }),
-      evolve: (state, event) => {
-        switch (event.type) {
-          case 'ShoppingCartOpened':
+      evolve: (
+        state: ShoppingCart,
+        eventRaw: ShoppingCartEvent,
+      ): ShoppingCart => {
+        const event = eventRaw as {
+          type: string;
+          data: Record<string, unknown>;
+        };
+        const eventType = event.type;
+        switch (eventType) {
+          case 'ShoppingCartOpened': {
+            const data = event.data as { customerId: string };
             return {
               ...state,
-              customerId: event.data.customerId,
+              customerId: data.customerId,
             };
-          case 'ProductAdded':
+          }
+          case 'ProductAdded': {
+            const data = event.data as { productId: string; quantity: number };
             return {
               ...state,
               items: [
                 ...state.items,
                 {
-                  productId: event.data.productId,
-                  quantity: event.data.quantity,
+                  productId: data.productId,
+                  quantity: data.quantity,
                 },
               ],
             };
+          }
           case 'ShoppingCartConfirmed':
             return {
               ...state,
-              status: 'confirmed' as const,
+              status: 'confirmed',
             };
           default:
             return state;
@@ -378,7 +391,10 @@ void describe('Firestore Event Store E2E', () => {
 
     const result = await eventStore.readStream(streamName);
 
-    if (result.currentStreamVersion !== STREAM_DOES_NOT_EXIST) {
+    if (
+      result.currentStreamVersion !==
+      (STREAM_DOES_NOT_EXIST as unknown as bigint)
+    ) {
       throw new Error(
         `Expected STREAM_DOES_NOT_EXIST, got ${result.currentStreamVersion}`,
       );

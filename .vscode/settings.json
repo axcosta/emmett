@@ -54,5 +54,6 @@
       "filePatterns": ["**/*.spec.ts", "**/*.spec.mts"],
       "parameters": ["--import", "tsx"]
     }
-  ]
+  ],
+  "conventionalCommits.scopes": ["emmett-firestore"]
 }

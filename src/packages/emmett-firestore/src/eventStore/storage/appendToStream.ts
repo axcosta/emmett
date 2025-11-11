@@ -1,5 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import type { Firestore, Transaction } from '@google-cloud/firestore';
+/* 
+eslint-disable @typescript-eslint/no-unsafe-assignment, 
+@typescript-eslint/no-unsafe-call
+ */
 import {
   ExpectedVersionConflictError,
   STREAM_DOES_NOT_EXIST,
@@ -8,6 +10,7 @@ import {
   type AppendToStreamResult,
   type Event,
 } from '@event-driven-io/emmett';
+import type { Firestore, Transaction } from '@google-cloud/firestore';
 
 export const appendToStream = async <EventType extends Event>(
   firestore: Firestore,
@@ -84,8 +87,11 @@ export const appendToStream = async <EventType extends Event>(
 
       transaction.set(eventRef, {
         type: event.type,
-        data: event.data,
-        metadata: event.metadata ?? {},
+        data: event.data as Record<string, unknown>,
+        metadata: ('metadata' in event ? event.metadata : {}) as Record<
+          string,
+          unknown
+        >,
         timestamp: new Date(),
         globalPosition: Number(currentGlobalPosition),
         streamVersion: Number(streamVersion),
