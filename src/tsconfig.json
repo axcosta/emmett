@@ -13,6 +13,7 @@
       ],
       "@event-driven-io/emmett-sqlite": ["./packages/emmett-sqlite/src"],
       "@event-driven-io/emmett-mongodb": ["./packages/emmett-mongodb/src"],
+      "@event-driven-io/emmett-realtimedb": ["./packages/emmett-realtimedb/src"],
       "@event-driven-io/emmett-esdb": ["./packages/emmett-esdb/src"],
       "@event-driven-io/emmett-fastify": ["./packages/emmett-fastify/src"],
       "@event-driven-io/emmett-tests": ["./packages/emmett-tests/src"]
@@ -33,6 +34,9 @@
     },
     {
       "path": "./packages/emmett-mongodb/"
+    },
+    {
+      "path": "./packages/emmett-realtimedb/"
     },
     {
       "path": "./packages/emmett-esdb/"
