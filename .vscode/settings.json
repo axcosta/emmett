@@ -55,5 +55,6 @@
       "parameters": ["--import", "tsx"]
     }
   ],
-  "conventionalCommits.scopes": ["emmett-firestore"]
+  "conventionalCommits.scopes": ["emmett-firestore"],
+  "conventionalCommits.scopes": ["emmett-realtimedb"]
 }

@@ -9,7 +9,7 @@
   "private": true,
   "scripts": {
     "setup": "cat .nvmrc | nvm install; nvm use",
-    "build": "run-s build:ts build:emmett build:esdb build:mongodb build:postgresql build:sqlite build:firestore build:expressjs build:fastify build:testcontainers build:tests",
+    "build": "run-s build:ts build:emmett build:esdb build:mongodb build:postgresql build:sqlite build:firestore build:realtimedb build:expressjs build:fastify build:testcontainers build:tests",
     "build:ts": "tsc -b",
     "build:ts:clean": "tsc --build --clean",
     "build:ts:watch": "tsc -b --watch",
@@ -19,6 +19,7 @@
     "build:postgresql": "npm run build -w packages/emmett-postgresql",
     "build:sqlite": "npm run build -w packages/emmett-sqlite",
     "build:firestore": "npm run build -w packages/emmett-firestore",
+    "build:realtimedb": "npm run build -w packages/emmett-realtimedb",
     "build:expressjs": "npm run build -w packages/emmett-expressjs",
     "build:fastify": "npm run build -w packages/emmett-fastify",
     "build:testcontainers": "npm run build -w packages/emmett-testcontainers",
@@ -94,6 +95,7 @@
     "tsconfig-paths": "^4.2.0",
     "tsup": "^8.2.4",
     "tsx": "^4.17.0",
+    "build": "run-s build:ts build:emmett build:esdb build:mongodb build:postgresql build:sqlite build:realtimedb build:expressjs build:fastify build:testcontainers build:tests",
     "typescript": "^5.5.4",
     "uuid": "^10.0.0",
     "vitepress": "^1.3.3",
@@ -114,6 +116,7 @@
     "packages/emmett-expressjs",
     "packages/emmett-sqlite",
     "packages/emmett-firestore",
+    "packages/emmett-realtimedb",
     "packages/emmett-testcontainers",
     "packages/emmett-fastify",
     "packages/emmett-tests"
