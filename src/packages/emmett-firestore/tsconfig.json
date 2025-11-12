@@ -1,0 +1,24 @@
+{
+  "extends": "../../tsconfig.shared.json",
+  "include": ["./src/**/*"],
+  "exclude": ["./dist", "./node_modules"],
+  "compilerOptions": {
+    "composite": true,
+    "outDir": "./dist" /* Redirect output structure to the directory. */,
+    "rootDir": "./src",
+    "paths": {
+      "@event-driven-io/emmett": ["../emmett/src"],
+      "@event-driven-io/emmett-testcontainers": [
+        "../emmett-testcontainers/src"
+      ]
+    }
+  },
+  "references": [
+    {
+      "path": "../emmett/"
+    },
+    {
+      "path": "../emmett-testcontainers/"
+    }
+  ]
+}
