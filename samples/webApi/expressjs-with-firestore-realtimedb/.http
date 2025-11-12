@@ -1,0 +1,51 @@
+@clientId = client-001
+@shoppingCartId = cart-001
+@productId = prod-001
+@quantity = 10
+@unitPrice = 100
+
+### Open Shopping Cart
+
+POST http://localhost:3000/clients/{{clientId}}/shopping-carts HTTP/1.1
+content-type: application/json
+
+{
+  "shoppingCartId": "{{shoppingCartId}}"
+}
+
+### Add Product Item
+
+POST http://localhost:3000/clients/{{clientId}}/shopping-carts/{{shoppingCartId}}/product-items HTTP/1.1
+content-type: application/json
+If-Match: W/"1"
+
+{
+  "productItem": {
+    "productId": "{{productId}}",
+    "quantity": {{quantity}}
+  }
+}
+
+### Get Shopping Cart
+
+GET http://localhost:3000/clients/{{clientId}}/shopping-carts/{{shoppingCartId}} HTTP/1.1
+content-type: application/json
+
+### Remove Product Item
+
+DELETE http://localhost:3000/clients/{{clientId}}/shopping-carts/{{shoppingCartId}}/product-items HTTP/1.1
+content-type: application/json
+If-Match: W/"2"
+
+{
+  "productItem": {
+    "productId": "{{productId}}",
+    "quantity": 1
+  }
+}
+
+### Confirm Shopping Cart
+
+POST http://localhost:3000/clients/{{clientId}}/shopping-carts/{{shoppingCartId}}/confirm HTTP/1.1
+content-type: application/json
+If-Match: W/"3"

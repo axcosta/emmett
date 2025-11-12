@@ -1,0 +1,40 @@
+version: '3.5'
+
+services:
+  app:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    container_name: emmett_firestore_realtimedb_api
+    profiles: [app]
+    environment:
+      - FIRESTORE_EMULATOR_HOST=firebase-emulator:8080
+      - FIREBASE_DATABASE_EMULATOR_HOST=firebase-emulator:9000
+      - FIREBASE_PROJECT_ID=demo-shopping-cart
+    networks:
+      - firebase_network
+    ports:
+      - '3000:3000'
+    depends_on:
+      - firebase-emulator
+
+  #######################################################
+  #  Firebase Emulators (Firestore + Realtime Database)
+  #######################################################
+  firebase-emulator:
+    image: andreysenov/firebase-tools:latest
+    container_name: firebase_emulator
+    command: firebase emulators:start --project demo-shopping-cart --only firestore,database
+    ports:
+      - '8080:8080'  # Firestore
+      - '9000:9000'  # Realtime Database
+      - '4000:4000'  # Emulator UI
+    volumes:
+      - ./firebase.json:/home/node/firebase.json
+      - ./.firebaserc:/home/node/.firebaserc
+    networks:
+      - firebase_network
+
+networks:
+  firebase_network:
+    driver: bridge

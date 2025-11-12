@@ -1,0 +1,75 @@
+{
+  "name": "expressjs-with-firestore-realtimedb",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Sample WebApi using Event Sourcing with Emmett, Express.js, Firestore (Event Store), and Realtime Database (Projections) with OpenAPI Validator and Operation Handlers",
+  "scripts": {
+    "setup": "cat .nvmrc | nvm install; nvm use",
+    "build": "tsup",
+    "build:ts": "tsc",
+    "build:ts:watch": "tsc -b --watch",
+    "start": "tsx ./src/index.ts",
+    "emulators:start": "firebase emulators:start --only firestore,database --project demo-shopping-cart",
+    "lint": "npm run lint:eslint && npm run lint:prettier",
+    "lint:prettier": "prettier --check \"**/**/!(*.d).{ts,json,md}\"",
+    "lint:eslint": "eslint '**/*.ts'",
+    "fix": "run-s fix:eslint fix:prettier",
+    "fix:prettier": "prettier --write \"**/**/!(*.d).{ts,json,md}\"",
+    "fix:eslint": "eslint '**/*.ts' --fix",
+    "test": "run-s test:unit test:int test:e2e",
+    "test:unit": "glob -d -c \"node --import tsx --test\" **/*.unit.spec.ts",
+    "test:int": "glob -d -c \"node --import tsx --test\" **/*.int.spec.ts",
+    "test:e2e": "glob -d -c \"node --import tsx --test\" **/*.e2e.spec.ts",
+    "test:watch": "run-p test:unit:watch test:int:watch test:e2e:watch",
+    "test:unit:watch": "glob -d -c \"node --import tsx --test --watch\" **/*.unit.spec.ts",
+    "test:int:watch": "glob -d -c \"node --import tsx --test --watch\" **/*.int.spec.ts",
+    "test:e2e:watch": "glob -d -c \"node --import tsx --test --watch\" **/*.e2e.spec.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/event-driven-io/emmett.git"
+  },
+  "keywords": [
+    "Event Sourcing",
+    "Firestore",
+    "Realtime Database",
+    "OpenAPI",
+    "Express.js"
+  ],
+  "author": "Oskar Dudycz",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/event-driven-io/emmett/issues"
+  },
+  "homepage": "https://github.com/event-driven-io/emmett#readme",
+  "dependencies": {
+    "@event-driven-io/emmett": "file:../../../src/packages/emmett",
+    "@event-driven-io/emmett-expressjs": "file:../../../src/packages/emmett-expressjs",
+    "@event-driven-io/emmett-firestore": "file:../../../src/packages/emmett-firestore",
+    "@event-driven-io/emmett-realtimedb": "file:../../../src/packages/emmett-realtimedb"
+  },
+  "devDependencies": {
+    "@google-cloud/firestore": "^7.11.6",
+    "@types/node": "^22.5.0",
+    "@typescript-eslint/eslint-plugin": "^8.2.0",
+    "@typescript-eslint/parser": "^8.2.0",
+    "eslint": "^9.9.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "express-openapi-validator": "^5.6.0",
+    "firebase-admin": "^13.0.0",
+    "glob": "^11.0.0",
+    "npm-run-all2": "^6.2.2",
+    "prettier": "^3.3.3",
+    "tsconfig-paths": "^4.2.0",
+    "tsup": "^8.2.4",
+    "tsx": "^4.17.0",
+    "typescript": "^5.5.4"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ]
+}

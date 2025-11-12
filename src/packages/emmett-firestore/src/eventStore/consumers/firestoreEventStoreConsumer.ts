@@ -51,9 +51,9 @@ export const firestoreEventStoreConsumer = (
         if (!isRunning) return;
 
         try {
-          // Query for new events
+          // Query for new events using collectionGroup to get events from all streams
           const snapshot = await firestore
-            .collection(eventsCollectionName)
+            .collectionGroup(eventsCollectionName)
             .where('globalPosition', '>', lastProcessedPosition)
             .orderBy('globalPosition', 'asc')
             .limit(100)
