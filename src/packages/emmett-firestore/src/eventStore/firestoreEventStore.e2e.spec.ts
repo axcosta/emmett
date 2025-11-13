@@ -85,6 +85,19 @@ void describe('Firestore Event Store E2E', () => {
     if (!result.createdNewStream) {
       throw new Error('Expected createdNewStream to be true');
     }
+
+    // Check lastEventGlobalPosition is returned
+    if (typeof result.lastEventGlobalPosition !== 'bigint') {
+      throw new Error(
+        `Expected lastEventGlobalPosition to be bigint, got ${typeof result.lastEventGlobalPosition}`,
+      );
+    }
+
+    if (result.lastEventGlobalPosition < 0n) {
+      throw new Error(
+        `Expected lastEventGlobalPosition to be >= 0, got ${result.lastEventGlobalPosition}`,
+      );
+    }
   });
 
   void it('should read events from stream', async () => {
@@ -402,6 +415,63 @@ void describe('Firestore Event Store E2E', () => {
 
     if (result.events.length !== 0) {
       throw new Error(`Expected 0 events, got ${result.events.length}`);
+    }
+  });
+
+  void it('should create consumer using factory method', async () => {
+    const processedEvents: Event[] = [];
+
+    const consumer = eventStore.consumer({
+      consumerId: 'test-consumer-factory',
+      processors: [
+        {
+          async handle(events: Event[]) {
+            processedEvents.push(...events);
+          },
+        },
+      ],
+      pollingIntervalMs: 100,
+    });
+
+    if (!consumer) {
+      throw new Error('Expected consumer to be created');
+    }
+
+    if (typeof consumer.start !== 'function') {
+      throw new Error('Expected consumer to have start method');
+    }
+
+    if (typeof consumer.stop !== 'function') {
+      throw new Error('Expected consumer to have stop method');
+    }
+
+    // Clean up
+    if (consumer.isRunning) {
+      consumer.stop();
+    }
+  });
+
+  void it('should throw error if consumer factory called without consumerId', async () => {
+    let errorThrown = false;
+
+    try {
+      eventStore.consumer({
+        processors: [],
+      } as Parameters<typeof eventStore.consumer>[0]);
+    } catch (error) {
+      errorThrown = true;
+      if (
+        !(error instanceof Error) ||
+        !error.message.includes('consumerId is required')
+      ) {
+        throw new Error(
+          `Expected 'consumerId is required' error, got: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
+
+    if (!errorThrown) {
+      throw new Error('Expected error to be thrown');
     }
   });
 });

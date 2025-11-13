@@ -9,4 +9,5 @@ export { firestoreEventStoreConsumer } from './eventStore/consumers/firestoreEve
 export type {
   FirestoreEventStoreConsumer,
   FirestoreEventStoreConsumerConfig,
+  FirestoreProcessor,
 } from './eventStore/consumers/firestoreEventStoreConsumer';

@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 import {
   NO_CONCURRENCY_CHECK,
   type AggregateStreamOptions,
   type AggregateStreamResult,
   type AppendToStreamOptions,
-  type AppendToStreamResult,
+  type AppendToStreamResultWithGlobalPosition,
   type Event,
   type EventStore,
   type ReadEventMetadataWithGlobalPosition,
@@ -12,6 +11,11 @@ import {
   type ReadStreamResult,
 } from '@event-driven-io/emmett';
 import type { Firestore } from '@google-cloud/firestore';
+import {
+  firestoreEventStoreConsumer,
+  type FirestoreEventStoreConsumer,
+  type FirestoreEventStoreConsumerConfig,
+} from './consumers/firestoreEventStoreConsumer';
 import { aggregateStream } from './storage/aggregateStream';
 import { appendToStream } from './storage/appendToStream';
 import { readStream } from './storage/readStream';
@@ -20,6 +24,9 @@ export type FirestoreReadEventMetadata = ReadEventMetadataWithGlobalPosition;
 
 export interface FirestoreEventStore
   extends EventStore<FirestoreReadEventMetadata> {
+  consumer<T = unknown>(
+    config?: Partial<Omit<FirestoreEventStoreConsumerConfig<T>, 'firestore'>>,
+  ): FirestoreEventStoreConsumer;
   close(): Promise<void>;
 }
 
@@ -62,7 +69,7 @@ export const getFirestoreEventStore = (
       streamName: string,
       events: EventType[],
       options?: AppendToStreamOptions,
-    ): Promise<AppendToStreamResult> {
+    ): Promise<AppendToStreamResultWithGlobalPosition> {
       return appendToStream(
         firestore,
         streamName,
@@ -74,6 +81,23 @@ export const getFirestoreEventStore = (
         },
         streamsCollectionName,
       );
+    },
+
+    consumer<T = unknown>(
+      consumerConfig?: Partial<
+        Omit<FirestoreEventStoreConsumerConfig<T>, 'firestore'>
+      >,
+    ): FirestoreEventStoreConsumer {
+      if (!consumerConfig?.consumerId) {
+        throw new Error('consumerId is required for consumer');
+      }
+
+      return firestoreEventStoreConsumer<T>({
+        firestore,
+        consumerId: consumerConfig.consumerId,
+        processors: consumerConfig.processors ?? [],
+        ...consumerConfig,
+      });
     },
 
     async close(): Promise<void> {

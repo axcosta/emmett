@@ -1,5 +1,5 @@
-/* 
-eslint-disable @typescript-eslint/no-unsafe-assignment, 
+/*
+eslint-disable @typescript-eslint/no-unsafe-assignment,
 @typescript-eslint/no-unsafe-call
  */
 import {
@@ -7,7 +7,7 @@ import {
   STREAM_DOES_NOT_EXIST,
   STREAM_EXISTS,
   type AppendToStreamOptions,
-  type AppendToStreamResult,
+  type AppendToStreamResultWithGlobalPosition,
   type Event,
 } from '@event-driven-io/emmett';
 import type { Firestore, Transaction } from '@google-cloud/firestore';
@@ -18,7 +18,7 @@ export const appendToStream = async <EventType extends Event>(
   events: EventType[],
   options: Required<AppendToStreamOptions>,
   streamsCollectionName: string,
-): Promise<AppendToStreamResult> => {
+): Promise<AppendToStreamResultWithGlobalPosition> => {
   if (events.length === 0) {
     throw new Error('Cannot append empty events array');
   }
@@ -113,9 +113,13 @@ export const appendToStream = async <EventType extends Event>(
       { merge: true },
     );
 
+    // Calculate last event global position
+    const lastEventGlobalPosition = BigInt(globalPosition + events.length - 1);
+
     return {
       nextExpectedStreamVersion: newStreamVersion,
       createdNewStream: !streamExists,
+      lastEventGlobalPosition,
     };
   });
 };
