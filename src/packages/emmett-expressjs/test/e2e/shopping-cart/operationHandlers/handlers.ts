@@ -7,8 +7,8 @@ import {
   assertUnsignedBigInt,
 } from '@event-driven-io/emmett';
 import type { Request } from 'express';
-import { Created, NoContent, on } from '../../..';
-import { getETagValueFromIfMatch, toWeakETag } from '../../../etag';
+import { Created, NoContent, on } from '../../../../src';
+import { getETagValueFromIfMatch, toWeakETag } from '../../../../src/etag';
 import { decider } from '../businessLogic';
 import type { PricedProductItem, ProductItem } from '../shoppingCart';
 

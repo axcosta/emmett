@@ -1,0 +1,19 @@
+{
+  "name": "emmett-expressjs-example-operation-handlers",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OpenAPI validation with operation handlers example for emmett-expressjs",
+  "type": "module",
+  "scripts": {
+    "start": "tsx index.ts",
+    "dev": "tsx watch index.ts"
+  },
+  "dependencies": {
+    "@event-driven-io/emmett-expressjs": "workspace:*",
+    "express": "^4.21.2",
+    "express-openapi-validator": "^5.6.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
+  }
+}

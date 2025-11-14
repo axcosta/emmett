@@ -2,5 +2,13 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "composite": false
-  }
+  },
+  "exclude": [
+    "test",
+    "examples",
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "dist",
+    "node_modules"
+  ]
 }

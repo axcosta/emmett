@@ -1,7 +1,7 @@
 import { type Application } from 'express';
 import { beforeEach, describe, it } from 'node:test';
 import request from 'supertest';
-import { createOpenApiValidatorOptions, getApplication } from '..';
+import { createOpenApiValidatorOptions, getApplication } from '../../../src';
 
 const openApiSpec = {
   openapi: '3.0.0',

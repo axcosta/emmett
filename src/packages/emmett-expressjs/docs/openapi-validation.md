@@ -294,7 +294,7 @@ export const openShoppingCart = on(async (request: Request) => {
 });
 ```
 
-See [example.ts](./example.ts) and [exampleWithOperationHandlers.ts](./exampleWithOperationHandlers.ts) for complete working examples.
+See [basic example](../examples/openapi/basic/index.ts) and [operation handlers example](../examples/openapi/operation-handlers/index.ts) for complete working examples.
 
 **Benefits of Operation Handlers:**
 
@@ -459,6 +459,7 @@ startAPI(app, { port: 3000 });
 
 ## Examples
 
-- [example.ts](./example.ts) - Basic OpenAPI validation with manual routes
-- [exampleWithOperationHandlers.ts](./exampleWithOperationHandlers.ts) - Using operation handlers for automatic routing
-- [openapi.int.spec.ts](./openapi.int.spec.ts) - Integration tests demonstrating various features
+- [Basic example](../examples/openapi/basic/index.ts) - Basic OpenAPI validation with manual routes
+- [With security](../examples/openapi/with-security/index.ts) - Custom security handlers (JWT, API keys)
+- [Operation handlers](../examples/openapi/operation-handlers/index.ts) - Using operation handlers for automatic routing
+- [Integration tests](../test/integration/openapi/openapi.int.spec.ts) - Integration tests demonstrating various features

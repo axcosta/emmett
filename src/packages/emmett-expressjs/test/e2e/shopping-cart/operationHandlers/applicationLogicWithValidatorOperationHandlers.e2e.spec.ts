@@ -4,14 +4,14 @@ import path from 'node:path';
 import { beforeEach, describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import request from 'supertest';
-import { createOpenApiValidatorOptions, getApplication } from '../../..';
-import { HeaderNames, toWeakETag } from '../../../etag';
+import { createOpenApiValidatorOptions, getApplication } from '../../../../src';
+import { HeaderNames, toWeakETag } from '../../../../src/etag';
 import {
   expectNextRevisionInResponseEtag,
   runTwice,
   statuses,
   type TestResponse,
-} from '../../testing';
+} from '../../fixtures/testing';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 

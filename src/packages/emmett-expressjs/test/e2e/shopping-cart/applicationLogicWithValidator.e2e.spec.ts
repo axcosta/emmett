@@ -6,14 +6,14 @@ import { type Application } from 'express';
 import { randomUUID } from 'node:crypto';
 import { beforeEach, describe, it } from 'node:test';
 import request from 'supertest';
-import { createOpenApiValidatorOptions, getApplication } from '../..';
-import { HeaderNames, toWeakETag } from '../../etag';
+import { createOpenApiValidatorOptions, getApplication } from '../../../src';
+import { HeaderNames, toWeakETag } from '../../../src/etag';
 import {
   expectNextRevisionInResponseEtag,
   runTwice,
   statuses,
   type TestResponse,
-} from '../testing';
+} from '../fixtures/testing';
 import { shoppingCartApi } from './api';
 
 // OpenAPI spec for shopping cart API

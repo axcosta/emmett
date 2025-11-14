@@ -4,7 +4,7 @@ import {
   assertUnsignedBigInt,
 } from '@event-driven-io/emmett';
 import { Test, type Response } from 'supertest';
-import { getWeakETagValue, type ETag } from '../etag';
+import { getWeakETagValue, type ETag } from '../../../src/etag';
 
 export type TestResponse<RequestBody> = Omit<
   Omit<Response, 'body'>,

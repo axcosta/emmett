@@ -14,7 +14,7 @@ import {
   getETagValueFromIfMatch,
   on,
   toWeakETag,
-} from '../../';
+} from '../../../src';
 import { decider } from './businessLogic';
 import { type PricedProductItem, type ProductItem } from './shoppingCart';
 
