@@ -1,0 +1,13 @@
+version: '3.5'
+
+services:
+  app:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    container_name: emmett_api_openapi
+    profiles: [app]
+    environment:
+      - NODE_ENV=production
+    ports:
+      - '3000:3000'

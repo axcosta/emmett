@@ -14,9 +14,9 @@ import {
   getETagValueFromIfMatch,
   on,
   toWeakETag,
-} from '../../../src';
-import { decider } from './businessLogic';
-import { type PricedProductItem, type ProductItem } from './shoppingCart';
+} from '../../../../src';
+import { decider } from '../businessLogic';
+import { type PricedProductItem, type ProductItem } from '../shoppingCart';
 
 export const handle = DeciderCommandHandler(decider);
 
@@ -40,7 +40,7 @@ export const shoppingCartApi =
           shoppingCartId,
           {
             type: 'OpenShoppingCart',
-            data: { clientId, shoppingCartId, now: new Date() },
+            data: { clientId, shoppingCartId, openedAt: new Date() },
           },
           { expectedStreamVersion: STREAM_DOES_NOT_EXIST },
         );
@@ -134,7 +134,7 @@ export const shoppingCartApi =
           shoppingCartId,
           {
             type: 'ConfirmShoppingCart',
-            data: { shoppingCartId, now: new Date() },
+            data: { shoppingCartId, confirmedAt: new Date() },
           },
           {
             expectedStreamVersion: assertUnsignedBigInt(
@@ -162,7 +162,7 @@ export const shoppingCartApi =
           shoppingCartId,
           {
             type: 'CancelShoppingCart',
-            data: { shoppingCartId, now: new Date() },
+            data: { shoppingCartId, canceledAt: new Date() },
           },
           {
             expectedStreamVersion: assertUnsignedBigInt(

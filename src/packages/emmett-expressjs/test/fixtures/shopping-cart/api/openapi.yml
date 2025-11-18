@@ -8,7 +8,7 @@ paths:
   /clients/{clientId}/shopping-carts:
     post:
       operationId: openShoppingCart
-      x-eov-operation-handler: handlers
+      x-eov-operation-handler: operationHandlers
       summary: Open a new shopping cart
       parameters:
         - name: clientId
@@ -41,7 +41,7 @@ paths:
   /clients/{clientId}/shopping-carts/{shoppingCartId}/product-items:
     post:
       operationId: addProductItemToShoppingCart
-      x-eov-operation-handler: handlers
+      x-eov-operation-handler: operationHandlers
       summary: Add a product item to shopping cart
       parameters:
         - name: clientId
@@ -91,7 +91,7 @@ paths:
 
     delete:
       operationId: removeProductItemFromShoppingCart
-      x-eov-operation-handler: handlers
+      x-eov-operation-handler: operationHandlers
       summary: Remove a product item from shopping cart
       parameters:
         - name: clientId
@@ -142,7 +142,7 @@ paths:
   /clients/{clientId}/shopping-carts/{shoppingCartId}/confirm:
     post:
       operationId: confirmShoppingCart
-      x-eov-operation-handler: handlers
+      x-eov-operation-handler: operationHandlers
       summary: Confirm shopping cart
       parameters:
         - name: clientId

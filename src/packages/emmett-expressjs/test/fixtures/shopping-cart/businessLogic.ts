@@ -22,7 +22,7 @@ export type OpenShoppingCart = {
   data: {
     shoppingCartId: string;
     clientId: string;
-    now: Date;
+    openedAt: Date;
   };
 };
 
@@ -46,7 +46,7 @@ export type ConfirmShoppingCart = {
   type: 'ConfirmShoppingCart';
   data: {
     shoppingCartId: string;
-    now: Date;
+    confirmedAt: Date;
   };
 };
 
@@ -54,7 +54,7 @@ export type CancelShoppingCart = {
   type: 'CancelShoppingCart';
   data: {
     shoppingCartId: string;
-    now: Date;
+    canceledAt: Date;
   };
 };
 
@@ -106,7 +106,7 @@ export const decide = (
         data: {
           shoppingCartId: command.shoppingCartId,
           clientId: command.clientId,
-          openedAt: command.now,
+          openedAt: command.openedAt,
         },
       };
     }
@@ -153,7 +153,7 @@ export const decide = (
         type: 'ShoppingCartConfirmed',
         data: {
           shoppingCartId: command.shoppingCartId,
-          confirmedAt: command.now,
+          confirmedAt: command.confirmedAt,
         },
       };
     }
@@ -167,7 +167,7 @@ export const decide = (
         type: 'ShoppingCartCanceled',
         data: {
           shoppingCartId: command.shoppingCartId,
-          canceledAt: command.now,
+          canceledAt: command.canceledAt,
         },
       };
     }

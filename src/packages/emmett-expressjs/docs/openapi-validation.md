@@ -72,6 +72,34 @@ const app = getApplication({
 });
 ```
 
+### Loading YAML Specifications
+
+If you keep your OpenAPI spec in a `.yml` file, you can load it once and share it across different scenarios (manual routing, validation-only, or `operationHandlers`):
+
+```typescript
+import path from 'node:path';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { parse } from 'yaml';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const openApiSpec = parse(
+  readFileSync(new URL('./openapi.yml', import.meta.url), 'utf-8'),
+);
+
+const app = getApplication({
+  apis: [usersApi],
+  openApiValidator: createOpenApiValidatorOptions(openApiSpec, {
+    // Optional: reuse the same spec to wire operationHandlers automatically
+    operationHandlers: path.join(__dirname, './handlers'),
+  }),
+});
+```
+
+This keeps the OpenAPI document as the single source of truth. The same `openapi.yml` file can wire manual routers, OpenAPI validation, and operation handlers without duplicating specifications.
+
 ## Configuration Options
 
 ### Request Validation

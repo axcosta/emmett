@@ -1,0 +1,251 @@
+openapi: 3.0.0
+info:
+  title: Shopping Cart API
+  version: 1.0.0
+  description: |
+    Event-sourced shopping cart API demonstrating:
+    - OpenAPI validation with express-openapi-validator
+    - Operation handlers for automatic route wiring
+    - In-memory event store
+    - Command-based event sourcing pattern
+  contact:
+    name: Emmett
+    url: https://event-driven-io.github.io/emmett/
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+
+paths:
+  /clients/{clientId}/shopping-carts/current/product-items:
+    post:
+      operationId: addProductItem
+      x-eov-operation-handler: shoppingCarts
+      summary: Add a product item to the current shopping cart
+      description: Adds a product item to the shopping cart. Creates cart if it doesn't exist.
+      tags:
+        - Shopping Carts
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          description: Unique identifier for the client
+          schema:
+            type: string
+            minLength: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - productId
+                - quantity
+              properties:
+                productId:
+                  type: string
+                  description: Unique identifier for the product
+                  minLength: 1
+                  example: "product-123"
+                quantity:
+                  type: integer
+                  description: Quantity of the product to add
+                  minimum: 1
+                  example: 2
+      responses:
+        '204':
+          description: Product item added successfully
+        '400':
+          description: Invalid request (validation error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '403':
+          description: Shopping cart is closed (confirmed or cancelled)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+    delete:
+      operationId: removeProductItem
+      x-eov-operation-handler: shoppingCarts
+      summary: Remove a product item from the current shopping cart
+      description: Removes a specified quantity of a product from the shopping cart
+      tags:
+        - Shopping Carts
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          description: Unique identifier for the client
+          schema:
+            type: string
+            minLength: 1
+        - name: productId
+          in: query
+          required: true
+          description: Product identifier to remove
+          schema:
+            type: string
+            minLength: 1
+        - name: quantity
+          in: query
+          required: true
+          description: Quantity to remove
+          schema:
+            type: integer
+            minimum: 1
+        - name: unitPrice
+          in: query
+          required: true
+          description: Unit price of the product
+          schema:
+            type: number
+            minimum: 0
+      responses:
+        '204':
+          description: Product item removed successfully
+        '400':
+          description: Invalid request (validation error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '403':
+          description: Shopping cart is not open or insufficient quantity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+  /clients/{clientId}/shopping-carts/current/confirm:
+    post:
+      operationId: confirmShoppingCart
+      x-eov-operation-handler: shoppingCarts
+      summary: Confirm the current shopping cart
+      description: Confirms the shopping cart, transitioning it to a closed state
+      tags:
+        - Shopping Carts
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          description: Unique identifier for the client
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        '204':
+          description: Shopping cart confirmed successfully
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '403':
+          description: Shopping cart is not open or is empty
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+  /clients/{clientId}/shopping-carts/current:
+    delete:
+      operationId: cancelShoppingCart
+      x-eov-operation-handler: shoppingCarts
+      summary: Cancel the current shopping cart
+      description: Cancels the shopping cart, transitioning it to a closed state
+      tags:
+        - Shopping Carts
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          description: Unique identifier for the client
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        '204':
+          description: Shopping cart cancelled successfully
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '403':
+          description: Shopping cart is not open
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+components:
+  schemas:
+    ProblemDetails:
+      type: object
+      properties:
+        type:
+          type: string
+          description: URI reference identifying the problem type
+          example: "about:blank"
+        title:
+          type: string
+          description: Short, human-readable summary
+          example: "Bad Request"
+        status:
+          type: integer
+          description: HTTP status code
+          example: 400
+        detail:
+          type: string
+          description: Human-readable explanation
+          example: "request.body.quantity should be >= 1"
+        errors:
+          type: array
+          description: Detailed validation errors
+          items:
+            type: object
+            properties:
+              path:
+                type: string
+                example: ".quantity"
+              message:
+                type: string
+                example: "should be >= 1"
+              errorCode:
+                type: string
+                example: "minimum"
+
+tags:
+  - name: Shopping Carts
+    description: Operations for managing shopping carts

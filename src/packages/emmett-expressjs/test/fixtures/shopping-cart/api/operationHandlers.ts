@@ -5,6 +5,7 @@ import {
   assertNotEmptyString,
   assertPositiveNumber,
   assertUnsignedBigInt,
+  type EventStore,
 } from '@event-driven-io/emmett';
 import type { Request } from 'express';
 import { Created, NoContent, on } from '../../../../src';
@@ -19,8 +20,20 @@ type AddProductItemRequest = Request<
   Partial<{ productId: string; quantity: number }>
 >;
 
-// Simple in-memory event store for E2E tests
-const eventStore = getInMemoryEventStore();
+// Lazy singleton to avoid polluting global namespace in tests
+let eventStoreInstance: EventStore | null = null;
+
+const getEventStore = (): EventStore => {
+  if (!eventStoreInstance) {
+    eventStoreInstance = getInMemoryEventStore();
+  }
+  return eventStoreInstance;
+};
+
+export const setEventStore = (store: EventStore) => {
+  eventStoreInstance = store;
+};
+
 const handle = DeciderCommandHandler(decider);
 
 const dummyPriceProvider = (_productId: string) => {
@@ -33,11 +46,11 @@ export const openShoppingCart = on(async (request: Request) => {
   const shoppingCartId = clientId;
 
   const result = await handle(
-    eventStore,
+    getEventStore(),
     shoppingCartId,
     {
       type: 'OpenShoppingCart',
-      data: { clientId, shoppingCartId, now: new Date() },
+      data: { clientId, shoppingCartId, openedAt: new Date() },
     },
     { expectedStreamVersion: STREAM_DOES_NOT_EXIST },
   );
@@ -59,7 +72,7 @@ export const addProductItemToShoppingCart = on(
     const unitPrice = dummyPriceProvider(productItem.productId);
 
     const result = await handle(
-      eventStore,
+      getEventStore(),
       shoppingCartId,
       {
         type: 'AddProductItemToShoppingCart',
@@ -89,7 +102,7 @@ export const removeProductItemFromShoppingCart = on(
     };
 
     const result = await handle(
-      eventStore,
+      getEventStore(),
       shoppingCartId,
       {
         type: 'RemoveProductItemFromShoppingCart',
@@ -113,11 +126,11 @@ export const confirmShoppingCart = on(async (request: Request) => {
   const shoppingCartId = assertNotEmptyString(request.params.shoppingCartId);
 
   const result = await handle(
-    eventStore,
+    getEventStore(),
     shoppingCartId,
     {
       type: 'ConfirmShoppingCart',
-      data: { shoppingCartId, now: new Date() },
+      data: { shoppingCartId, confirmedAt: new Date() },
     },
     {
       expectedStreamVersion: assertUnsignedBigInt(
@@ -136,11 +149,11 @@ export const cancelShoppingCart = on(async (request: Request) => {
   const shoppingCartId = assertNotEmptyString(request.params.shoppingCartId);
 
   const result = await handle(
-    eventStore,
+    getEventStore(),
     shoppingCartId,
     {
       type: 'CancelShoppingCart',
-      data: { shoppingCartId, now: new Date() },
+      data: { shoppingCartId, canceledAt: new Date() },
     },
     {
       expectedStreamVersion: assertUnsignedBigInt(

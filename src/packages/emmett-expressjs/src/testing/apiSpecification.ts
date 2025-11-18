@@ -85,7 +85,10 @@ export type ApiSpecification<EventType extends Event = Event> = (
 };
 
 export const ApiSpecification = {
-  for: <EventType extends Event = Event, Store extends EventStore = EventStore>(
+  for: <
+    EventType extends Event = Event,
+    Store extends EventStore<import('@event-driven-io/emmett').ReadEventMetadataWithGlobalPosition> = EventStore<import('@event-driven-io/emmett').ReadEventMetadataWithGlobalPosition>
+  >(
     getEventStore: () => Store,
     getApplication: (eventStore: Store) => Application,
   ): ApiSpecification<EventType> => {

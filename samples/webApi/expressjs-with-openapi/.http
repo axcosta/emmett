@@ -1,0 +1,53 @@
+@clientId = dummy
+@productId = dummy
+@unitPrice = 100
+
+### Add Product (validated by OpenAPI spec)
+
+POST http://localhost:3000/clients/{{clientId}}/shopping-carts/current/product-items HTTP/1.1
+content-type: application/json
+
+{
+  "productId": "{{productId}}",
+  "quantity": 10
+}
+
+### Remove Product (validated by OpenAPI spec)
+
+@quantity = 1
+
+DELETE http://localhost:3000/clients/{{clientId}}/shopping-carts/current/product-items?productId={{productId}}&quantity={{quantity}}&unitPrice={{unitPrice}} HTTP/1.1
+content-type: application/json
+
+### Confirm Shopping Cart (validated by OpenAPI spec)
+
+POST http://localhost:3000/clients/{{clientId}}/shopping-carts/current/confirm HTTP/1.1
+content-type: application/json
+
+### Cancel Shopping Cart (validated by OpenAPI spec)
+
+DELETE http://localhost:3000/clients/{{clientId}}/shopping-carts/current HTTP/1.1
+content-type: application/json
+
+### Invalid Request Example - Missing productId (should return 400)
+
+POST http://localhost:3000/clients/{{clientId}}/shopping-carts/current/product-items HTTP/1.1
+content-type: application/json
+
+{
+  "quantity": 10
+}
+
+### Invalid Request Example - Negative quantity (should return 400)
+
+POST http://localhost:3000/clients/{{clientId}}/shopping-carts/current/product-items HTTP/1.1
+content-type: application/json
+
+{
+  "productId": "{{productId}}",
+  "quantity": -1
+}
+
+### Get OpenAPI Specification
+
+GET http://localhost:3000/api-docs/openapi.json HTTP/1.1
